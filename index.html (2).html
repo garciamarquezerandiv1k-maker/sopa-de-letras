@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sopa de Letras Interactiva: Herramientas Digitales</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-color: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        p.instruccion {
+            color: #94a3b8;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 30px;
+            background-color: var(--card-color);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 35px);
+            grid-template-rows: repeat(8, 35px);
+            gap: 5px;
+            user-select: none;
+        }
+
+        .cell {
+            background-color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .cell:hover {
+            background-color: #475569;
+        }
+
+        .cell.selected {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .cell.found {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .word-list-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .word-list-container h2 {
+            font-size: 1.2rem;
+            margin-top: 0;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 8px;
+            color: #94a3b8;
+        }
+
+        .word-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .word-item {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .word-item.found {
+            color: var(--success-color);
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .word-item.found::before {
+            content: "✓";
+            font-weight: bold;
+        }
+
+        @media (max-width: 700px) {
+            .game-container { flex-direction: column; align-items: center; }
+            .grid { grid-template-columns: repeat(12, 28px); grid-template-rows: repeat(8, 28px); }
+            .cell { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Sopa de Letras Interactiva</h1>
+    <p class="instruccion">Haz clic y arrastra para seleccionar e identificar las herramientas digitales de tu lista.</p>
+
+    <div class="game-container">
+        <div class="grid" id="soup-grid"></div>
+
+        <div class="word-list-container">
+            <h2>Palabras por buscar:</h2>
+            <ul class="word-list">
+                <li class="word-item" id="w-CANVA">CANVA</li>
+                <li class="word-item" id="w-AUDACITY">AUDACITY</li>
+                <li class="word-item" id="w-CAPCUT">CAPCUT</li>
+                <li class="word-item" id="w-POWERPOINT">POWERPOINT</li>
+                <li class="word-item" id="w-INSHOT">INSHOT</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Matriz corregida con INSHOT en la última columna (Columna 11) de arriba a abajo
+        const matrix = [
+            ['C','A','N','V','A','X','Y','Z','W','Q','R','X'],
+            ['A','U','D','A','C','I','T','Y','M','N','L','X'],
+            ['P','P','R','S','T','U','V','W','X','Y','Z','I'],
+            ['C','B','F','G','H','I','J','K','L','M','N','N'],
+            ['U','O','P','Q','R','S','T','U','V','W','X','S'],
+            ['T','N','M','L','K','J','I','H','G','F','E','H'],
+            ['A','B','C','D','E','F','G','H','I','J','K','O'],
+            ['P','O','W','E','R','P','O','I','N','T','L','T']
+        ];
+
+        // Coordenadas corregidas [fila, columna]
+        const solutions = {
+            "CANVA": [[0,0], [0,1], [0,2], [0,3], [0,4]],
+            "AUDACITY": [[1,0], [1,1], [1,2], [1,3], [1,4], [1,5], [1,6], [1,7]],
+            "CAPCUT": [[0,0], [1,0], [2,0], [3,0], [4,0], [5,0]],
+            "POWERPOINT": [[7,0], [7,1], [7,2], [7,3], [7,4], [7,5], [7,6], [7,7], [7,8], [7,9]],
+            "INSHOT": [[2,11], [3,11], [4,11], [5,11], [6,11], [7,11]]
+        };
+
+        const gridElement = document.getElementById('soup-grid');
+        let isMouseDown = false;
+        let selectedCells = [];
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 12; c++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.textContent = matrix[r][c];
+                cell.dataset.row = r;
+                cell.dataset.col = c;
+
+                cell.addEventListener('mousedown', () => startSelection(cell));
+                cell.addEventListener('mouseenter', () => extendSelection(cell));
+                window.addEventListener('mouseup', endSelection);
+
+                gridElement.appendChild(cell);
+            }
+        }
+
+        function startSelection(cell) {
+            isMouseDown = true;
+            selectedCells = [cell];
+            cell.classList.add('selected');
+        }
+
+        function extendSelection(cell) {
+            if (!isMouseDown) return;
+            if (!selectedCells.includes(cell)) {
+                selectedCells.push(cell);
+                cell.classList.add('selected');
+            }
+        }
+
+        function endSelection() {
+            if (!isMouseDown) return;
+            isMouseDown = false;
+
+            let formedWord = selectedCells.map(cell => cell.textContent).join('');
+            let reversedWord = formedWord.split('').reverse().join('');
+
+            let matchedWord = null;
+            if (solutions[formedWord] && checkCoordinates(selectedCells, solutions[formedWord])) {
+                matchedWord = formedWord;
+            } else if (solutions[reversedWord] && checkCoordinates(selectedCells, solutions[reversedWord])) {
+                matchedWord = reversedWord;
+            }
+
+            if (matchedWord) {
+                selectedCells.forEach(cell => {
+                    cell.classList.remove('selected');
+                    cell.classList.add('found');
+                });
+                document.getElementById(`w-${matchedWord}`).classList.add('found');
+            } else {
+                selectedCells.forEach(cell => cell.classList.remove('selected'));
+            }
+            selectedCells = [];
+        }
+
+        function checkCoordinates(cells, solutionCoords) {
+            if (cells.length !== solutionCoords.length) return false;
+            return cells.every(cell => {
+                let r = parseInt(cell.dataset.row);
+                let c = parseInt(cell.dataset.col);
+                return solutionCoords.some(coord => coord[0] === r && coord[1] === c);
+            });
+        }
+    </script>
+</body>
+</html>
